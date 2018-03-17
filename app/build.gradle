@@ -20,11 +20,21 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    flavorDimensions "default"
+    productFlavors {
+        prod {
+            buildConfigField "String", "BASE_URL", '"https://api.unsplash.com/"'
+        }
+
+        staging {
+            buildConfigField "String", "BASE_URL", '"https://api.unsplash.com/"'
+        }
+    }
 }
 ext {
     supportLibraryVersion = '27.1.0'
     butterKnifeVersion = '8.8.1'
-    retrofitVersion = '2.4.0'
+    retrofitVersion = '2.3.0'
     retrofitLoggingVersion = '3.9.0'
     androidLifecycleVersion = '1.1.0'
     picassoVersion = '2.5.2'
