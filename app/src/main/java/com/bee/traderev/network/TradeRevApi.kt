@@ -17,7 +17,7 @@ interface TradeRevApi {
     fun getToken(@Url url : String, @Body authorizationRequestClass: AuthorizationRequestClass) : Call<TokenResponse>
 
     @GET("/photos/curated/")
-    fun getPhotos() : Call<List<Photo>>
+    fun getPhotos(@Query("page")page : Int=0,@Query("per_page") perPage : Int=20) : Call<List<Photo>>
 
 
 }
