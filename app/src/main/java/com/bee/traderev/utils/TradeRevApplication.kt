@@ -6,7 +6,7 @@ import com.squareup.leakcanary.LeakCanary
 class TradeRevApplication : Application() {
     override fun onCreate() {
         super.onCreate()
-        initializeLeakCanary()
+//        initializeLeakCanary()
     }
     private fun initializeLeakCanary() {
         if (LeakCanary.isInAnalyzerProcess(this)) {

@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.support.v4.app.SharedElementCallback
+import android.support.v4.content.LocalBroadcastManager
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.PagerSnapHelper
@@ -33,19 +34,25 @@ class PhotoDetailActivity : AppCompatActivity() {
     private val snapHelper: SnapHelper by lazy {
         PagerSnapHelper()
     }
+    private val localBroadcastManager: LocalBroadcastManager by lazy {
+        LocalBroadcastManager.getInstance(this)
+    }
+    private val pageChangedIntent: Intent by lazy {
+        Intent(PAGE_CHANGED)
+    }
     private var currentPage = 0 //todo move to viewmodel
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_photo_detail)
         supportPostponeEnterTransition()
-
+        val position = intent.getIntExtra(POSITION,-1)
         setEnterSharedElementCallback(
                 object : SharedElementCallback() {
                     override fun onMapSharedElements(names: MutableList<String>?, sharedElements: MutableMap<String, View>?) {
                         super.onMapSharedElements(names, sharedElements)
                         val selectedViewHolder = recyclerView
-                                .findViewHolderForAdapterPosition(0)
-                        if (selectedViewHolder == null || selectedViewHolder.itemView == null) {
+                                .findViewHolderForAdapterPosition(position)
+                        if (selectedViewHolder?.itemView == null) {
                             return
                         }
                         sharedElements!![names!![0]] = selectedViewHolder.itemView.findViewById(R.id.item_imageview_photo)
@@ -54,9 +61,27 @@ class PhotoDetailActivity : AppCompatActivity() {
 
         ButterKnife.bind(this)
         recyclerView.adapter = adapter
-        recyclerView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        val layoutManager= LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        recyclerView.layoutManager = layoutManager
         snapHelper.attachToRecyclerView(recyclerView)
-        viewModel.getFeed()?.observe(this,feedObserver)
+        viewModel.getFeed()?.observe(this, feedObserver)
+        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            var dx = 0
+
+            override fun onScrollStateChanged(recyclerView: RecyclerView?, newState: Int) {
+                super.onScrollStateChanged(recyclerView, newState)
+                if (RecyclerView.SCROLL_STATE_IDLE == newState) {
+                    val position = layoutManager.findFirstCompletelyVisibleItemPosition()
+                   localBroadcastManager.sendBroadcast(pageChangedIntent.putExtra(POSITION,position))
+                }
+
+            }
+
+            override fun onScrolled(recyclerView: RecyclerView?, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                this.dx = dx
+            }
+        })
 
     }
 
@@ -65,6 +90,8 @@ class PhotoDetailActivity : AppCompatActivity() {
             items.addAll(it)
             adapter.notifyDataSetChanged()
             currentPage++
+            //todo
+            recyclerView.scrollToPosition(intent.getIntExtra(POSITION,-1))
         }
     }
 
@@ -81,7 +108,8 @@ class PhotoDetailActivity : AppCompatActivity() {
     }
 
     companion object {
-
+        const val POSITION = "position"
+        const val PAGE_CHANGED = "pageChanged"
         fun newIntent(context: Context) =
                 Intent(context, PhotoDetailActivity::class.java)
     }

@@ -32,7 +32,7 @@ class PhotosAdapter(private val type: Type = Type.FEED, private val items: List<
             if (Type.FEED == type) {
                 itemView.setOnClickListener {
                     if (adapterPosition != RecyclerView.NO_POSITION) {
-                        listener.onItemClicked((this as ViewHolder).photoImageView,items[adapterPosition])
+                        listener.onItemClicked(adapterPosition,(this as ViewHolder).photoImageView,items[adapterPosition])
                     }
                 }
             }
