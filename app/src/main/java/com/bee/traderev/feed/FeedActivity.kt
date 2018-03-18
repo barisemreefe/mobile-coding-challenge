@@ -10,6 +10,14 @@ import butterknife.BindView
 import butterknife.ButterKnife
 import com.bee.traderev.R
 import com.bee.traderev.datatypes.Photo
+import android.support.v4.view.ViewCompat
+import android.support.v4.app.ActivityOptionsCompat
+import android.view.View
+import android.support.v4.app.SharedElementCallback
+
+
+
+
 
 class FeedActivity : AppCompatActivity() {
     @BindView(R.id.feed_recyclerview)
@@ -34,6 +42,18 @@ class FeedActivity : AppCompatActivity() {
         recyclerView.adapter = adapter
         recyclerView.layoutManager = GridLayoutManager(this,3)
         viewModel.getFeed()?.observe(this,feedObserver)
+        setExitSharedElementCallback(
+                object : SharedElementCallback() {
+                    override fun onMapSharedElements(names: MutableList<String>?, sharedElements: MutableMap<String, View>?) {
+                        super.onMapSharedElements(names, sharedElements)
+                        val selectedViewHolder = recyclerView
+                                .findViewHolderForAdapterPosition(0)
+                        if (selectedViewHolder == null || selectedViewHolder.itemView == null) {
+                            return
+                        }
+                        sharedElements!![names!![0]] = selectedViewHolder.itemView.findViewById(R.id.item_imageview_photo)
+                    }
+                })
     }
 
     private val feedObserver = Observer<List<Photo>> {
@@ -45,9 +65,13 @@ class FeedActivity : AppCompatActivity() {
     }
 
     private val photosAdapterListener  = object :PhotosAdapter.PhotosAdapterListener{
-        override fun onItemClicked(item: Photo) {
+        override fun onItemClicked(view: View, item: Photo) {
             //todo set position
-            startActivity(PhotoDetailActivity.newIntent(this@FeedActivity))
+            val intent = PhotoDetailActivity.newIntent(this@FeedActivity)
+            val options = ActivityOptionsCompat.makeSceneTransitionAnimation(this@FeedActivity,
+                    view,
+                    ViewCompat.getTransitionName(view))
+            startActivity(intent, options.toBundle())
         }
 
         override fun loadMore() {

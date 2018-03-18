@@ -12,6 +12,7 @@ import com.bee.traderev.R
 import com.bee.traderev.datatypes.Photo
 import com.bee.traderev.utils.ItemClickListener
 import com.bee.traderev.utils.LoadMoreListener
+import com.bee.traderev.utils.PhotoLoadListener
 import com.bee.traderev.utils.setPhoto
 
 enum class Type {
@@ -20,15 +21,19 @@ enum class Type {
 
 class PhotosAdapter(private val type: Type = Type.FEED, private val items: List<Photo>, private val listener: PhotosAdapterListener) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-    interface PhotosAdapterListener : ItemClickListener<Photo>, LoadMoreListener
+    interface PhotosAdapterListener : ItemClickListener<Photo>, LoadMoreListener {
+        fun imageLoaded(){}
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val v = LayoutInflater.from(parent.context)
                 .inflate(getListItem(), parent, false)
         with(getViewHolder(v)) {
-            itemView.setOnClickListener {
-                if (adapterPosition != RecyclerView.NO_POSITION) {
-                    listener.onItemClicked(items[adapterPosition])
+            if (Type.FEED == type) {
+                itemView.setOnClickListener {
+                    if (adapterPosition != RecyclerView.NO_POSITION) {
+                        listener.onItemClicked((this as ViewHolder).photoImageView,items[adapterPosition])
+                    }
                 }
             }
             return this
@@ -66,7 +71,12 @@ class PhotosAdapter(private val type: Type = Type.FEED, private val items: List<
 
     private fun bindPhotoDetail(holder: ViewHolderDetail, photo: Photo) {
         with(holder) {
-            photoImageView.setPhoto(photo)
+            photoImageView.setPhoto(photo,object :PhotoLoadListener{
+                override fun onPhotoLoaded() {
+                    listener.imageLoaded()
+                }
+
+            })
             descriptionTextView.text = photo.user?.name
         }
     }
@@ -92,7 +102,6 @@ class PhotosAdapter(private val type: Type = Type.FEED, private val items: List<
 
         init {
             ButterKnife.bind(this, itemView)
-
         }
     }
 
