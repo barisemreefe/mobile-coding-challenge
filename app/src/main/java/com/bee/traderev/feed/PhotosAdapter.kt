@@ -23,6 +23,7 @@ class PhotosAdapter(private val type: Type = Type.FEED, private val items: List<
 
     interface PhotosAdapterListener : ItemClickListener<Photo>, LoadMoreListener {
         fun imageLoaded(){}
+        fun onLocationClicked(location : String?){}
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
@@ -35,13 +36,19 @@ class PhotosAdapter(private val type: Type = Type.FEED, private val items: List<
                         listener.onItemClicked(adapterPosition,(this as ViewHolder).photoImageView,items[adapterPosition])
                     }
                 }
+            }else{
+                (this as ViewHolderDetail).locationTextView.setOnClickListener {
+                    if (adapterPosition != RecyclerView.NO_POSITION) {
+                        listener.onLocationClicked(items[adapterPosition].user?.location)
+                    }
+                }
             }
             return this
         }
     }
 
     private fun getListItem() = when (type) {
-        Type.PHOTO_DETAIL -> R.layout.item_grid_photo
+        Type.PHOTO_DETAIL -> R.layout.item_detail_photo
         Type.FEED -> R.layout.item_grid_photo
     }
 
@@ -78,6 +85,10 @@ class PhotosAdapter(private val type: Type = Type.FEED, private val items: List<
 
             })
             descriptionTextView.text = photo.user?.name
+            twitterTextView.text = photo.user?.twitterUserName
+            instagramTextView.text = photo.user?.instagramUserName
+            locationTextView.text = photo.user?.location
+            bioTextView.text = photo.user?.bio
         }
     }
 
@@ -99,6 +110,14 @@ class PhotosAdapter(private val type: Type = Type.FEED, private val items: List<
         lateinit var photoImageView: ImageView
         @BindView(R.id.item_textview_description)
         lateinit var descriptionTextView: TextView
+        @BindView(R.id.item_textview_twitterusername)
+        lateinit var twitterTextView: TextView
+        @BindView(R.id.item_textview_instagramusername)
+        lateinit var instagramTextView: TextView
+        @BindView(R.id.item_textview_bio)
+        lateinit var bioTextView: TextView
+        @BindView(R.id.item_textview_location)
+        lateinit var locationTextView: TextView
 
         init {
             ButterKnife.bind(this, itemView)

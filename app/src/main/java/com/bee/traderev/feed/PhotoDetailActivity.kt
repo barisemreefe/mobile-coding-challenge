@@ -4,6 +4,7 @@ import android.arch.lifecycle.Observer
 import android.arch.lifecycle.ViewModelProviders
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.support.v4.app.SharedElementCallback
 import android.support.v4.content.LocalBroadcastManager
@@ -105,9 +106,19 @@ class PhotoDetailActivity : AppCompatActivity() {
             super.imageLoaded()
             supportStartPostponedEnterTransition()
         }
+
+        override fun onLocationClicked(location: String?) {
+            super.onLocationClicked(location)
+            location?.let {
+                val mapIntent = Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=" + it))
+                mapIntent.`package` = MAPS_PACKAGE
+                startActivity(mapIntent)
+            }
+        }
     }
 
     companion object {
+        private const val MAPS_PACKAGE = "com.google.android.apps.maps"
         const val POSITION = "position"
         const val PAGE_CHANGED = "pageChanged"
         fun newIntent(context: Context) =
