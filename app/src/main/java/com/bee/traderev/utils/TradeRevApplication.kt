@@ -6,6 +6,7 @@ import com.squareup.leakcanary.LeakCanary
 class TradeRevApplication : Application() {
     override fun onCreate() {
         super.onCreate()
+        application = this
 //        initializeLeakCanary()
     }
     private fun initializeLeakCanary() {
@@ -13,5 +14,9 @@ class TradeRevApplication : Application() {
             return
         }
         LeakCanary.install(this)
+    }
+
+    companion object {
+        var application: TradeRevApplication? = null
     }
 }

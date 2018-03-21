@@ -6,13 +6,17 @@ import com.bee.traderev.datatypes.Photo
 
 class FeedViewModel : ViewModel() {
     private var feedRepository: FeedRepository? = null
+    private var page : Int = 1
 
     fun setFeedRepository(feedRepository: FeedRepository) {
         this.feedRepository = feedRepository
     }
 
-    fun getFeed(page : Int =0): LiveData<List<Photo>>? {
-        return feedRepository?.getPhotos(page)
+    fun getFeed(): LiveData<List<Photo>>? {
+        return feedRepository?.getPhotos(true,page++)
     }
-
+    fun loadMore(lastPage : Int): LiveData<List<Photo>>? {
+        this.page = lastPage+1
+        return feedRepository?.getPhotos(false,page)
+    }
 }
