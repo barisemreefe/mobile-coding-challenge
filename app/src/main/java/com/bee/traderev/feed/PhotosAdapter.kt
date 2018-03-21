@@ -19,32 +19,48 @@ enum class Type {
     PHOTO_DETAIL, FEED
 }
 
-class PhotosAdapter(private val type: Type = Type.FEED, private val items: List<Photo>, private val listener: PhotosAdapterListener) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class PhotosAdapter(private val type: Type = Type.FEED, private val listener: PhotosAdapterListener) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+    private val items = ArrayList<Photo>()
 
     interface PhotosAdapterListener : ItemClickListener<Photo>, LoadMoreListener {
-        fun imageLoaded(){}
-        fun onLocationClicked(location : String?){}
+        fun imageLoaded(id: String) {}
+        fun onLocationClicked(location: String?) {}
+    }
+    //todo Paging library can be implemented instead of this https://developer.android.com/topic/libraries/architecture/paging.html
+
+    fun setItems(photos: List<Photo>) {
+        items.clear()
+        addItems(photos)
+    }
+
+    fun addItems(photos: List<Photo>) {
+        items.addAll(photos)
+        notifyDataSetChanged()
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val v = LayoutInflater.from(parent.context)
                 .inflate(getListItem(), parent, false)
-        with(getViewHolder(v)) {
-            if (Type.FEED == type) {
+        val vh = getViewHolder(v)
+        if (Type.FEED == type) {
+            with(vh as ViewHolder) {
                 itemView.setOnClickListener {
                     if (adapterPosition != RecyclerView.NO_POSITION) {
-                        listener.onItemClicked(adapterPosition,(this as ViewHolder).photoImageView,items[adapterPosition])
+                        listener.onItemClicked(adapterPosition, this.photoImageView, items[adapterPosition])
                     }
                 }
-            }else{
-                (this as ViewHolderDetail).locationTextView.setOnClickListener {
+            }
+
+        } else {
+            with(vh as ViewHolderDetail) {
+                locationTextView.setOnClickListener {
                     if (adapterPosition != RecyclerView.NO_POSITION) {
                         listener.onLocationClicked(items[adapterPosition].user?.location)
                     }
                 }
             }
-            return this
         }
+        return vh
     }
 
     private fun getListItem() = when (type) {
@@ -76,24 +92,36 @@ class PhotosAdapter(private val type: Type = Type.FEED, private val items: List<
         }
     }
 
+
     private fun bindPhotoDetail(holder: ViewHolderDetail, photo: Photo) {
         with(holder) {
-            photoImageView.setPhoto(photo,object :PhotoLoadListener{
-                override fun onPhotoLoaded() {
-                    listener.imageLoaded()
+            val user = photo.user
+            photoImageView.setPhoto(photo, object :PhotoLoadListener{
+                override fun onPhotoLoaded(id: String) {
+                    listener.imageLoaded(id)
                 }
 
             })
-            descriptionTextView.text = photo.user?.name
-            twitterTextView.text = photo.user?.twitterUserName
-            instagramTextView.text = photo.user?.instagramUserName
-            locationTextView.text = photo.user?.location
-            bioTextView.text = photo.user?.bio
+            descriptionTextView.text = user?.name
+            twitterTextView.setTextOrHide(user?.twitterUserName)
+            instagramTextView.setTextOrHide(user?.instagramUserName)
+            locationTextView.setTextOrHide(user?.location)
+            bioTextView.setTextOrHide(user?.bio)
+            locationImageView.visibility = if (user?.location.isNullOrEmpty()) View.GONE else View.VISIBLE
+            bioImageView.visibility = if (user?.bio.isNullOrEmpty()) View.GONE else View.VISIBLE
+        }
+    }
+
+    private fun TextView.setTextOrHide(value: String?) {
+        if (value.isNullOrEmpty()) {
+            visibility = View.GONE
+        } else {
+            visibility = View.VISIBLE
+            text = value
         }
     }
 
     override fun getItemCount() = items.size
-
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         @BindView(R.id.item_imageview_photo)
@@ -118,6 +146,10 @@ class PhotosAdapter(private val type: Type = Type.FEED, private val items: List<
         lateinit var bioTextView: TextView
         @BindView(R.id.item_textview_location)
         lateinit var locationTextView: TextView
+        @BindView(R.id.item_imageview_location)
+        lateinit var locationImageView: View
+        @BindView(R.id.item_imageview_bio)
+        lateinit var bioImageView: View
 
         init {
             ButterKnife.bind(this, itemView)

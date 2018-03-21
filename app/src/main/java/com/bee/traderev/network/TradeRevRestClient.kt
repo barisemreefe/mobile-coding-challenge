@@ -42,7 +42,7 @@ object TradeRevRestClient {
 
 
     }
-    val retrofit by lazy {
+    private val retrofit by lazy {
         Retrofit.Builder()
                 .addConverterFactory(MoshiConverterFactory.create())
                 .baseUrl(BuildConfig.BASE_URL).client(okHttpClient)

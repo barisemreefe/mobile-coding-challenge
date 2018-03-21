@@ -8,7 +8,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.support.v4.app.SharedElementCallback
 import android.support.v4.content.LocalBroadcastManager
-import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.PagerSnapHelper
 import android.support.v7.widget.RecyclerView
@@ -18,19 +17,19 @@ import butterknife.BindView
 import butterknife.ButterKnife
 import com.bee.traderev.R
 import com.bee.traderev.datatypes.Photo
+import com.bee.traderev.utils.BaseActivity
 
 
-class PhotoDetailActivity : AppCompatActivity() {
+class PhotoDetailActivity : BaseActivity() {
     @BindView(R.id.photodetail_recyclerview)
     lateinit var recyclerView: RecyclerView
-    private val items = ArrayList<Photo>()
     private val viewModel: FeedViewModel by lazy {
         ViewModelProviders.of(this).get(FeedViewModel::class.java).apply {
             setFeedRepository(FeedRepository())
         }
     }
     private val adapter: PhotosAdapter by lazy {
-        PhotosAdapter(Type.PHOTO_DETAIL, items, photosAdapterListener)
+        PhotosAdapter(Type.PHOTO_DETAIL, photosAdapterListener)
     }
     private val snapHelper: SnapHelper by lazy {
         PagerSnapHelper()
@@ -41,12 +40,17 @@ class PhotoDetailActivity : AppCompatActivity() {
     private val pageChangedIntent: Intent by lazy {
         Intent(PAGE_CHANGED)
     }
-    private var currentPage = 0 //todo move to viewmodel
+    private var position = 0
+    private var selectedPhotoId :String? =null
+    private var lastPage : Int = 1
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_photo_detail)
+        ButterKnife.bind(this)
         supportPostponeEnterTransition()
-        val position = intent.getIntExtra(POSITION,-1)
+        position = intent.getIntExtra(POSITION, -1)
+        selectedPhotoId = intent.getStringExtra(ID)
         setEnterSharedElementCallback(
                 object : SharedElementCallback() {
                     override fun onMapSharedElements(names: MutableList<String>?, sharedElements: MutableMap<String, View>?) {
@@ -60,9 +64,8 @@ class PhotoDetailActivity : AppCompatActivity() {
                     }
                 })
 
-        ButterKnife.bind(this)
         recyclerView.adapter = adapter
-        val layoutManager= LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        val layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
         recyclerView.layoutManager = layoutManager
         snapHelper.attachToRecyclerView(recyclerView)
         viewModel.getFeed()?.observe(this, feedObserver)
@@ -73,7 +76,7 @@ class PhotoDetailActivity : AppCompatActivity() {
                 super.onScrollStateChanged(recyclerView, newState)
                 if (RecyclerView.SCROLL_STATE_IDLE == newState) {
                     val position = layoutManager.findFirstCompletelyVisibleItemPosition()
-                   localBroadcastManager.sendBroadcast(pageChangedIntent.putExtra(POSITION,position))
+                    localBroadcastManager.sendBroadcast(pageChangedIntent.putExtra(POSITION, position))
                 }
 
             }
@@ -88,41 +91,54 @@ class PhotoDetailActivity : AppCompatActivity() {
 
     private val feedObserver = Observer<List<Photo>> {
         it?.let {
-            items.addAll(it)
-            adapter.notifyDataSetChanged()
-            currentPage++
-            //todo
-            recyclerView.scrollToPosition(intent.getIntExtra(POSITION,-1))
+            lastPage = it.last().pageLocation
+            adapter.addItems(it)
+            recyclerView.scrollToPosition(position)
         }
     }
 
     private val photosAdapterListener = object : PhotosAdapter.PhotosAdapterListener {
 
         override fun loadMore() {
-            viewModel.getFeed(currentPage)?.observe(this@PhotoDetailActivity, feedObserver)
+            viewModel.loadMore(lastPage)?.observe(this@PhotoDetailActivity, feedObserver)
         }
 
-        override fun imageLoaded() {
-            super.imageLoaded()
-            supportStartPostponedEnterTransition()
+        override fun imageLoaded(id: String) {
+            super.imageLoaded(id)
+            if (isSelectedPhotoLoaded(id)) {
+                recyclerView.post {
+                    supportStartPostponedEnterTransition()
+                }
+            }
         }
 
         override fun onLocationClicked(location: String?) {
             super.onLocationClicked(location)
             location?.let {
-                val mapIntent = Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=" + it))
-                mapIntent.`package` = MAPS_PACKAGE
-                startActivity(mapIntent)
+                openLocation(it)
             }
         }
+    }
+
+    private fun isSelectedPhotoLoaded(id : String) = (selectedPhotoId == id)
+
+    private fun openLocation(location :String) {
+        val mapIntent = Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=" + location)).apply {
+            `package` = MAPS_PACKAGE
+        }
+        startActivity(mapIntent)
     }
 
     companion object {
         private const val MAPS_PACKAGE = "com.google.android.apps.maps"
         const val POSITION = "position"
+        const val ID = "id"
         const val PAGE_CHANGED = "pageChanged"
-        fun newIntent(context: Context) =
-                Intent(context, PhotoDetailActivity::class.java)
+        fun newIntent(context: Context,id: String,position: Int) =
+                Intent(context, PhotoDetailActivity::class.java).apply {
+                    putExtra(PhotoDetailActivity.POSITION,position)
+                    putExtra(PhotoDetailActivity.ID,id)
+                }
     }
 
 

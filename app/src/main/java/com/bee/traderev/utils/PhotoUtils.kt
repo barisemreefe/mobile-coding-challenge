@@ -7,17 +7,17 @@ import com.squareup.picasso.Callback
 import com.squareup.picasso.Picasso
 
 interface PhotoLoadListener {
-    fun onPhotoLoaded()
+    fun onPhotoLoaded(id:String)
 }
 fun ImageView.setPhoto(photo : Photo,listener: PhotoLoadListener? = null) {
     setBackgroundColor(Color.parseColor(photo.color))
-    Picasso.with(context).load(photo.urls!!.regular).into(this,object :Callback{
+    Picasso.with(context).load(photo.urls!!.thumb).into(this,object :Callback{
         override fun onSuccess() {
-            listener?.onPhotoLoaded()
+            listener?.onPhotoLoaded(photo.id)
         }
 
         override fun onError() {
-            listener?.onPhotoLoaded()
+            listener?.onPhotoLoaded(photo.id)
         }
 
     })

@@ -9,4 +9,16 @@
         <item name="android:windowContentTransitions">true</item>
     </style>
 
+    <style name="PhotoDetailInfoText">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_column">2</item>
+        <item name="android:layout_marginLeft">@dimen/grid</item>
+        <item name="android:layout_marginRight">@dimen/grid</item>
+        <item name="android:layout_marginTop">@dimen/half_grid</item>
+        <item name="android:layout_marginBottom">@dimen/half_grid</item>
+        <item name="android:background">?attr/selectableItemBackground</item>
+        <item name="android:fontFamily">@font/roboto_medium</item>
+    </style>
+
 </resources>
